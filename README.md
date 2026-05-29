@@ -24,16 +24,16 @@ This project provides a solution for implementing a semantic cache for LLM (Larg
 ## Architecture and Workflow
 
 ### 1. Semantic Caching Concept
--   When a user asks a question, the system checks if a similar question has been asked before.
--   It uses **Vertex AI Embeddings** (`text-embedding-004`) to convert the question into a vector.
+-   When a user sends a prompt, the system checks if a similar prompt has been processed before.
+-   It uses **Vertex AI Embeddings** (`text-embedding-004`) to convert the prompt into a vector.
 -   It searches **Memorystore for Redis** (version 7.2+) for the most similar stored vector.
--   If a highly similar question is found (**Cache Hit**), it returns the cached answer, saving cost and time.
--   If no similar question is found (**Cache Miss**), it calls the **Gemini model** (`gemini-2.5-flash`) on Vertex AI, returns the answer, and stores the question-answer pair in Redis for future use.
+-   If a highly similar prompt is found (**Cache Hit**), it returns the cached response, saving cost and time.
+-   If no similar prompt is found (**Cache Miss**), it forwards the incoming request directly to the **Vertex AI REST API**, returns the response, and stores it in Redis for future use.
 
 ### 2. Infrastructure
 -   **Apigee X**: Acts as the secure API Gateway. Receives client requests and routes them to the Cloud Run backend. (Proxy Name: `llm-redis-cache-v1`)
 -   **Cloud Run**: Hosts the Flask app that serves as the backend API and manages the semantic cache logic. (Service Name: `semantic-cache`)
--   **Memorystore for Redis**: Stores the embeddings and cached answers, providing low-latency vector search. (Instance ID: `redis-semantic-cache`)
+-   **Memorystore for Redis**: Stores the embeddings and cached responses, providing low-latency vector search. (Instance ID: `redis-semantic-cache`)
 -   **Vertex AI**: Provides the embedding model and the LLM.
 -   **Direct VPC Egress**: Connects Cloud Run to the VPC network where Redis resides without needing a connector.
 
@@ -41,9 +41,9 @@ This project provides a solution for implementing a semantic cache for LLM (Larg
 1.  **Client** calls the Apigee API Proxy.
 2.  **Apigee** forwards the request to the **Cloud Run** service.
 3.  **Cloud Run** executes the semantic cache logic:
-    *   Checks Redis for similar questions.
-    *   If found, returns cached answer.
-    *   If not found, calls Vertex AI (Gemini), caches the result in Redis, and returns the answer.
+    *   Checks Redis for similar prompts.
+    *   If found, returns cached response.
+    *   If not found, forwards the request to Vertex AI REST API, caches the result in Redis, and returns the response.
 
 ---
 

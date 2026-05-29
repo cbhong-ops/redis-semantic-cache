@@ -29,8 +29,9 @@ echo "============================================================"
 
 # Check if apigeecli is installed
 if ! command -v apigeecli &> /dev/null; then
-    echo "apigeecli not found. Please install it or add to PATH."
-    exit 1
+    echo "apigeecli not found. Installing..."
+    curl -s https://raw.githubusercontent.com/apigee/apigeecli/main/downloadLatest.sh | bash
+    export PATH=$PATH:$HOME/.apigeecli/bin
 fi
 
 echo "Creating and Deploying API Proxy bundle..."
