@@ -1,6 +1,6 @@
-# Redis Semantic Cache with Gemini on Cloud Run
+# Redis Semantic Cache on Cloud Run via Apigee
 
-This project provides a solution for implementing a semantic cache for LLM (Large Language Model) responses using Redis (Memorystore) and Gemini (Vertex AI), deployed on Cloud Run.
+This project provides a solution for implementing a semantic cache for LLM (Large Language Model) responses using Redis (Memorystore) and Gemini (Vertex AI) on Cloud Run, with Apigee X serving as the secure API Gateway to route requests and manage the flow.
 
 ---
 
