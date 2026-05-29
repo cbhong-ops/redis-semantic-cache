@@ -1,0 +1,9 @@
+Flask
+gunicorn
+langchain
+langchain-core
+langchain-community
+langchain-google-vertexai
+redis
+pyopenssl
+langchain-google-memorystore-redis
