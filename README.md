@@ -10,10 +10,12 @@ This project provides a solution for implementing a semantic cache for LLM (Larg
     -   **`app.py`**: Flask web application that handles requests and manages the semantic cache.
     -   **`Dockerfile`**: Defines the container image for Cloud Run.
     -   **`requirements.txt`**: Python dependencies.
--   **`semantic-cache-test.py`**: Local test script for verifying the semantic cache concept.
+
 -   **`env.sh`**: Environment variables configuration file.
 -   **`deploy-redis.sh`**: Shell script to create Memorystore for Redis (version 7.2+) on GCP.
 -   **`deploy-cloudrun.sh`**: Shell script to build and deploy the application to Cloud Run, including setting up firewall rules and service accounts.
+-   **`deploy-apiproxy.sh`**: Shell script to upload and deploy the Apigee API Proxy.
+-   **`clear-redis.sh`**: Shell script to clear all data in Redis via Cloud Run endpoint.
 -   **`undeploy-all.sh`**: Shell script to clean up all created resources on GCP.
 -   **`apiproxy/`**: Apigee API Proxy bundle named `llm-redis-cache-v1` that routes traffic to Cloud Run.
 
@@ -79,8 +81,15 @@ This project provides a solution for implementing a semantic cache for LLM (Larg
 
 ### 3. Testing
 
-After deployment, use the provided URL to test the service.
--   Access `https://<YOUR_CLOUD_RUN_URL>/test` to run the predefined test cases and verify the cache hit behavior.
+You can test the semantic cache and Apigee proxy integration using the provided Jupyter notebook.
+
+-   **Test Notebook**: `notebook/llm_redis_cache_v1.ipynb`
+-   **Environment**: Designed to be run in **Vertex AI Colab Enterprise** or any Jupyter environment.
+-   **Test Scenarios**:
+    1.  **Bypass Cache**: Send a request with the header `x-skipCache: true`. This instructs Apigee to route the request directly to Vertex AI, bypassing the Cloud Run semantic cache entirely.
+    2.  **Cached Flow** (When `x-skipCache` is not `true` or omitted):
+        *   **Cache Miss**: Send a new or unique request. The response header `X-Cache` will be `MISS`.
+        *   **Cache Hit**: Send the same or a semantically similar request again. The response header `X-Cache` will be `HIT`, and `X-Cache-Score` will show the similarity score.
 
 ### 4. Clearing Cache
 
