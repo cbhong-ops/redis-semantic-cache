@@ -3,7 +3,7 @@ import os
 import google.auth
 import redis
 import requests
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response, stream_with_context
 from google import genai
 from google.auth.transport.requests import Request
 from langchain_google_vertexai import VertexAIEmbeddings
@@ -21,7 +21,7 @@ embeddings = VertexAIEmbeddings(model="text-embedding-004", credentials=credenti
 # Initialize Redis Client and Vector Store
 redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
 redis_client = redis.from_url(redis_url)
-# Initialize/Create the vector store index
+# Initialize/Create the vector store index for non-stream
 index_config = HNSWConfig(
     name="semantic_cache",
     distance_strategy=DistanceStrategy.COSINE,
@@ -33,9 +33,27 @@ try:
 except Exception as e:
     print(f"Index initialization failed or already exists: {e}")
 
+# Initialize/Create the vector store index for stream
+stream_index_config = HNSWConfig(
+    name="semantic_cache_stream",
+    distance_strategy=DistanceStrategy.COSINE,
+    vector_size=768
+)
+try:
+    RedisVectorStore.init_index(client=redis_client, index_config=stream_index_config)
+    print("Index 'semantic_cache_stream' initialized successfully.")
+except Exception as e:
+    print(f"Index initialization failed or already exists: {e}")
+
 vector_store = RedisVectorStore(
     client=redis_client,
     index_name="semantic_cache",
+    embeddings=embeddings
+)
+
+vector_store_stream = RedisVectorStore(
+    client=redis_client,
+    index_name="semantic_cache_stream",
     embeddings=embeddings
 )
 
@@ -51,9 +69,9 @@ cache_ttl = int(os.environ.get("CACHE_TTL", "3600"))
 
 
 
-def check_cache(prompt):
+def check_cache(prompt, v_store):
     try:
-        results = vector_store.similarity_search_with_score(prompt, k=1)
+        results = v_store.similarity_search_with_score(prompt, k=1)
         print(f"Search results for '{prompt}': {results}")
         if results:
             doc, score = results[0]
@@ -78,7 +96,7 @@ def generate_content(path):
     start_time = time.time()
     
     # Check cache
-    cached_response, score = check_cache(prompt)
+    cached_response, score = check_cache(prompt, vector_store)
     if cached_response:
         duration = time.time() - start_time
         print(f"Cache Hit! Score: {score:.4f}, Duration: {duration:.2f}s")
@@ -102,6 +120,8 @@ def generate_content(path):
         
         # Construct Vertex AI REST API URL using request.path
         url = f"https://aiplatform.googleapis.com{request.path}"
+        if request.query_string:
+            url += f"?{request.query_string.decode('utf-8')}"
         
         headers = {
             "Authorization": f"Bearer {token}",
@@ -134,18 +154,108 @@ def generate_content(path):
         print(f"Gemini call or caching failed: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/v1/projects/<path:path>:streamGenerateContent', methods=['POST'])
+def stream_generate_content(path):
+    data = request.get_json()
+    
+    try:
+        prompt = data['contents'][0]['parts'][0]['text']
+    except (KeyError, IndexError) as e:
+        return jsonify({'error': 'Invalid payload structure'}), 400
+
+    start_time = time.time()
+    
+    # Check cache
+    cached_response, score = check_cache(prompt, vector_store_stream)
+    
+    if cached_response:
+        duration = time.time() - start_time
+        print(f"Cache Hit (Stream)! Score: {score:.4f}, Duration: {duration:.2f}s")
+        
+        import json
+        if isinstance(cached_response, str):
+            chunks = json.loads(cached_response)
+        else:
+            chunks = cached_response
+        
+        def generate_from_cache():
+            for chunk in chunks:
+                yield chunk + "\n"
+                time.sleep(0.01)
+                
+        resp = Response(stream_with_context(generate_from_cache()), mimetype='text/event-stream')
+        resp.headers['X-Cache'] = 'HIT'
+        resp.headers['X-Cache-Score'] = str(score)
+        return resp
+
+    # Cache Miss
+    print("Cache Miss (Stream). Calling Gemini via REST API...")
+    try:
+        credentials.refresh(Request())
+        token = credentials.token
+        
+        url = f"https://aiplatform.googleapis.com{request.path}"
+        if request.query_string:
+            url += f"?{request.query_string.decode('utf-8')}"
+        
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        
+        # Call with stream=True
+        response = requests.post(url, headers=headers, json=data, stream=True)
+        
+        if response.status_code != 200:
+            print(f"Gemini API call failed with status {response.status_code}: {response.text}")
+            return jsonify({'error': 'Gemini API call failed', 'details': response.text}), response.status_code
+
+        def generate_and_cache():
+            chunks_accumulated = []
+            for line in response.iter_lines():
+                if line:
+                    decoded_line = line.decode('utf-8')
+                    chunks_accumulated.append(decoded_line)
+                    yield decoded_line + "\n"
+            
+            # After stream ends, save to cache
+            try:
+                import json
+                ids = vector_store_stream.add_texts([prompt], metadatas=[{"response": json.dumps(chunks_accumulated)}])
+                for doc_id in ids:
+                    redis_client.expire(doc_id, cache_ttl)
+                print(f"Stream cache saved. Total chunks: {len(chunks_accumulated)}")
+            except Exception as e:
+                print(f"Failed to save stream to cache: {e}")
+
+        resp = Response(stream_with_context(generate_and_cache()), mimetype='text/event-stream')
+        resp.headers['X-Cache'] = 'MISS'
+        return resp
+        
+    except Exception as e:
+        print(f"Gemini stream call or caching failed: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/clear', methods=['GET', 'POST'])
 def clear_cache():
     try:
         redis_client.flushall()
         
-        # Recreate index after flush
+        # Recreate index for non-stream after flush
         index_config = HNSWConfig(
             name="semantic_cache",
             distance_strategy=DistanceStrategy.COSINE,
             vector_size=768
         )
         RedisVectorStore.init_index(client=redis_client, index_config=index_config)
+
+        # Recreate index for stream after flush
+        stream_index_config = HNSWConfig(
+            name="semantic_cache_stream",
+            distance_strategy=DistanceStrategy.COSINE,
+            vector_size=768
+        )
+        RedisVectorStore.init_index(client=redis_client, index_config=stream_index_config)
         
         return jsonify({'message': 'Redis cache cleared and index recreated successfully.'})
     except Exception as e:
