@@ -1,15 +1,15 @@
 #!/bin/bash
 
-export PROJECT_ID="apac-na-apigee-x-demo1"
-export REGION="us-central1"
+export PROJECT_ID="YOUR_PROJECT_ID"
+export REGION="REGION_NAME"
 
 export REDIS_SIZE=1
 export REDIS_TIER="basic"
 export VPC_NETWORK="default"
 export VPC_SUBNET="default"
-export REDIS_IP="10.212.154.171"
+export REDIS_IP="WILL_BE_UPDATED_AFTER_REDIS_DEPLOYMENT" 
 export SCORE_THRESHOLD=0.2
 export APIGEE_ORG="$PROJECT_ID"
-export APIGEE_ENV="eval"
+export APIGEE_ENV="APIGEE_ENV_NAME"
 export CACHE_TTL=3600
-export APIGEE_HOST_NAME="eval-group.35-186-195-41.nip.io"
+export APIGEE_HOST_NAME="APIGEE_HOST_NAME"
