@@ -22,6 +22,10 @@
     <Request/>
     <Response/>
   </PostFlow>
+  <EventFlow name="EventFlow" content-type="text/event-stream">
+    <Response>
+    </Response>
+  </EventFlow>
   <HTTPTargetConnection>
     <Properties/>
     <URL>https://aiplatform.googleapis.com</URL>

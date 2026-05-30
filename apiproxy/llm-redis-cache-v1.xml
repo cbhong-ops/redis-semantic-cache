@@ -1,8 +1,8 @@
-<APIProxy revision="6" name="llm-redis-cache-v1">
+<APIProxy revision="7" name="llm-redis-cache-v1">
     <DisplayName></DisplayName>
     <Description></Description>
-    <CreatedAt>1780069654738</CreatedAt>
-    <LastModifiedAt>1780069654738</LastModifiedAt>
+    <CreatedAt>1780136979554</CreatedAt>
+    <LastModifiedAt>1780136979554</LastModifiedAt>
     <BasePaths>/v1/samples/llm-redis-cache</BasePaths>
     <Policies>
         <Policy>EV-checkSkipCache</Policy>
