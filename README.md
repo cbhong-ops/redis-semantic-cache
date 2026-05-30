@@ -101,6 +101,17 @@ If you need to clear the cache (e.g., for testing different endpoints or forcing
 
 ---
 
+## References & Related Concepts
+
+This project implements a custom semantic cache tailored for Google Cloud Memorystore for Redis (version 7.2+) and Vertex AI. While it is a custom implementation, it is inspired by and references the following concepts and documentation:
+
+-   **Redis Semantic Cache**: The concept of using vector similarity search to cache LLM responses based on semantic meaning rather than exact string matching. [Redis Semantic Cache Documentation](https://redis.io/docs/latest/develop/data-platforms/search/vector-search/semantic-cache/)
+-   **LangChain Redis Semantic Cache**: LangChain provides built-in support for Redis semantic caching, which served as a reference for the workflow. [LangChain LLM Caching Documentation](https://python.langchain.com/docs/integrations/llms/llm_caching/#semantic-cache)
+-   **Vertex AI Context Caching**: A native Google Cloud feature that caches input tokens for long prompts to reduce cost and latency. While different from our application-level cache, it solves a similar problem for large contexts. [Vertex AI Context Caching Documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/context-caching)
+-   **GCP Memorystore for Redis Vector Search**: Memorystore for Redis (version 7.2+) supports vector search capabilities, enabling low-latency generative AI use cases. [Memorystore Vector Search Documentation](https://cloud.google.com/memorystore/docs/redis/vector-search-overview)
+
+---
+
 ## Cleanup
 
 To delete all resources created by this project, run:
