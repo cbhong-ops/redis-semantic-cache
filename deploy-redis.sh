@@ -9,8 +9,13 @@ else
 fi
 
 # 1. Enable Redis API
-echo "Activating Redis API..."
-gcloud services enable redis.googleapis.com --project=$PROJECT_ID
+echo "Checking Redis API status..."
+if ! gcloud services list --enabled --project=$PROJECT_ID | grep -q "redis.googleapis.com"; then
+    echo "Activating Redis API..."
+    gcloud services enable redis.googleapis.com --project=$PROJECT_ID
+else
+    echo "Redis API is already active."
+fi
 
 # 2. Create Redis instance
 echo "Creating Memorystore for Redis instance (this may take a few minutes)..."
