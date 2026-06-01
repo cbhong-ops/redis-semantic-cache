@@ -19,9 +19,9 @@
     <Properties/>
     <Authentication>
       <GoogleIDToken>
-        <Audience>https://semantic-cache-5zdspghlpq-uc.a.run.app</Audience>
+        <Audience>https://CLOUD_RUN_URL</Audience>
       </GoogleIDToken>
     </Authentication>
-    <URL>https://semantic-cache-5zdspghlpq-uc.a.run.app</URL>
+    <URL>https://CLOUD_RUN_URL</URL>
   </HTTPTargetConnection>
 </TargetEndpoint>
