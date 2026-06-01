@@ -31,7 +31,7 @@ This project provides a solution for implementing a semantic cache for LLM (Larg
 -   If no similar prompt is found (**Cache Miss**), it forwards the incoming request directly to the **Vertex AI REST API**, returns the response, and stores it in Redis for future use.
 
 ### 2. Infrastructure
--   **Apigee X**: Acts as the secure API Gateway. Receives client requests and routes them to the Cloud Run backend. (Proxy Name: `llm-redis-cache-v1`)
+-   **Apigee X**: Acts as the secure API Gateway. Receives client requests and routes them to the Cloud Run backend (Proxy Name: `llm-redis-cache-v1`). If the `x-skipCache` header is `true`, it calls the LLM directly. Otherwise, if it is `false` or missing, it calls Cloud Run to check the Semantic Cache.
 -   **Cloud Run**: Hosts the Flask app that serves as the backend API and manages the semantic cache logic. (Service Name: `semantic-cache`)
 -   **Memorystore for Redis**: Stores the embeddings and cached responses, providing low-latency vector search. (Instance ID: `redis-semantic-cache`)
 -   **Vertex AI**: Provides the embedding model and the LLM.
