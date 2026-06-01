@@ -75,6 +75,7 @@ This project provides a solution for implementing a semantic cache for LLM (Larg
     ```
     *This script will enable required APIs, create a service account with necessary roles, set up a firewall rule, and deploy the app.*
     *Note: Ensure that the `<Audience>` and `<URL>` elements in [semanticCache.xml](file:///usr/local/google/home/cbhong/vscode2/redis-semantic-cache/apiproxy/targets/semanticCache.xml) are updated with the Cloud Run service URL.*
+    ![semanticCache.xml with Cloud Run URL](./images/semantic-cache-target.png)
 5.  **Deploy Apigee Proxy**: Run the script to upload and deploy the Apigee API Proxy.
     ```bash
     ./deploy-apiproxy.sh
